@@ -2,16 +2,23 @@ package net.sescreen.apisrv;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+
+import java.io.File;
 
 public class Main{
+
+    public static final File uploadsDirectory=new File("./uploads");
+    public static DatabaseQueryController mainDB;
+
     public static void main(String[] args) throws InterruptedException {
+        mainDB=new DatabaseQueryController("192.168.1.100","apiserver","HMTUuj4rQjaDYVe8","main");
         EventLoopGroup bossGroup = new NioEventLoopGroup(); // (1)
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -21,7 +28,21 @@ public class Main{
                     .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
+                            System.out.println("Init new channel");
+                            ChannelPipeline pipeline = ch.pipeline();
 
+
+                            pipeline.addLast(new HttpRequestDecoder());
+                            pipeline.addLast(new HttpResponseEncoder());
+                            //pipeline.addLast("httpd",new HttpUploadServerHandler());
+                            //pipeline.addLast("http",new HttpUploadServerHandler());
+                            pipeline.addLast("uploader",new UploadHandler());
+                            pipeline.addLast("getter",new GetHandler());
+                            pipeline.addLast("deleter",new DeleteHandler());
+                            pipeline.addLast("blackhole",new BlackHoleHandler());
+
+                            // Remove the following line if you don't want automatic content compression.
+                            pipeline.addLast(new HttpContentCompressor());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)          // (5)

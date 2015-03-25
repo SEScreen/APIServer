@@ -16,6 +16,9 @@ public class Main{
 
     public static final File uploadsDirectory=new File("./uploads");
     public static DatabaseQueryController mainDB;
+    public static ChannelFuture f;
+
+
 
     public static void main(String[] args) throws InterruptedException {
         mainDB=new DatabaseQueryController("192.168.1.100","apiserver","HMTUuj4rQjaDYVe8","main");
@@ -36,9 +39,9 @@ public class Main{
                             pipeline.addLast(new HttpResponseEncoder());
                             //pipeline.addLast("httpd",new HttpUploadServerHandler());
                             //pipeline.addLast("http",new HttpUploadServerHandler());
-                            pipeline.addLast("uploader",new UploadHandler());
-                            pipeline.addLast("getter",new GetHandler());
-                            pipeline.addLast("deleter",new DeleteHandler());
+                            pipeline.addLast("handler",new RequestHandler());
+                            //pipeline.addLast("getter",new GetHandler());
+                            //pipeline.addLast("deleter",new DeleteHandler());
                             pipeline.addLast("blackhole",new BlackHoleHandler());
 
                             // Remove the following line if you don't want automatic content compression.
@@ -49,15 +52,22 @@ public class Main{
                     .childOption(ChannelOption.SO_KEEPALIVE, true); // (6)
 
             // Bind and start to accept incoming connections.
-            ChannelFuture f = b.bind(8080).sync(); // (7)
-
+            f = b.bind(8080).sync(); // (7)
+            System.out.println("Server started up.");
+            Thread cmdL=new Thread(new CommandListener(),"CommandListener");
+            cmdL.setDaemon(true);
+            cmdL.start();
             // Wait until the server socket is closed.
             // In this example, this does not happen, but you can do that to gracefully
             // shut down your server.
             f.channel().closeFuture().sync();
+
         } finally {
+
             workerGroup.shutdown();
             bossGroup.shutdown();
         }
+        System.out.println("Socket IO shutdown");
     }
+
 }

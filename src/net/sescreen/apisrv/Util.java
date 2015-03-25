@@ -10,13 +10,15 @@ import io.netty.util.CharsetUtil;
  */
 public class Util {
     public static void sendTextMessage(CharSequence resp,ChannelHandlerContext ctx){
+        System.out.println(resp);
         FullHttpResponse fhr=new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, Unpooled.copiedBuffer(resp, CharsetUtil.UTF_8));
-        fhr.headers().set(HttpHeaders.Names.CONTENT_LENGTH,fhr.content().readableBytes());
-        fhr.headers().set(HttpHeaders.Names.CONNECTION,HttpHeaders.Values.KEEP_ALIVE);
+        fhr.headers().set(HttpHeaderNames.CONTENT_LENGTH,fhr.content().readableBytes());
+        fhr.headers().set(HttpHeaderNames.CONNECTION,HttpHeaderValues.KEEP_ALIVE);
         ctx.write(fhr);
     }
 
     public static String fileOnlyName(String fn){
+        fn=fn.substring(fn.indexOf('/')+1);
         int pos=fn.lastIndexOf('.');
         return pos>0?fn.substring(0,pos):fn;
     }
